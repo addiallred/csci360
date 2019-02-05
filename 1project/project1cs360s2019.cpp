@@ -47,9 +47,6 @@ bool safe(int** grid, int row, int col, int n){
 
 //need to 
 int placeC(int c, int** grid, int n, int a, int points, int max){
-	if(points == 4 && c == 0){
-		print(grid, n);
-	}
 	if(c <= 0){
 		return points;
 	}
@@ -135,6 +132,10 @@ int main(int argc, char* argv[]){
 	}else{
 		results = aStar(c, grid, n, a);
 	}
-	cout << "the results are " << results;
+	input.close();
+	ofstream outfile;
+	outfile.open("output.txt");
+	outfile << results;
+	outfile.close();
 	return 0;
 }

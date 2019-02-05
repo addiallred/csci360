@@ -4,59 +4,84 @@
 #include <sstream>
 using namespace std;
 
-int max = 0; 
-//set this to a gload variable for max;
-int** updateGrid(int grid[n][n], int row, int col, int n){
+
+
+void print(int** grid, int n){
+	cout << "***********************" << endl;
 	for(int i = 0; i < n; i++){
-		if(i != col){
-			grid[row][i] = -1;
+		for(int j = 0; j < n; j++){
+			cout << grid[i][j] << " ";
 		}
-	}for(int i = 0; i < n; i++){
-		if(i != row){
-			grid[i][col] = -1;
+		cout << endl;
+	}
+}
+//set this to a gload variable for max;
+bool safe(int** grid, int row, int col, int n){
+	int i = 0; 
+	int j = 0;
+	for(i = 0; i < n; i++){
+		if(grid[row][i] == -2){
+			return false;
+		}else if(grid[i][col] == -2){
+			return false;
 		}
-	}for(int i = row + 1; i < n; i++){
-		for(int j = col + 1; i < n; i++){
-			grid[i][j] =  -1;
-		}for(int j = col - 1; j > 0; j--){
-			grid[i][j] = -1;
+	}for(i = row, j = col; i < n && j < n; i++, j++){
+		if(grid[i][j] == -2){
+			return false;
 		}
-	}for(int i = row-1; i > 0; i--){
-		for(int j = col-1; j > 0; j--){
-			grid[i][j] = -1;
-		}for(int j = col + 1; j < n ; j++){
-			grid[i][j] = -1;
+	}for(i = row, j = col; i < n && j < n; i++, j--){
+		if(grid[i][j] == -2){
+			return false;
+		}
+	}for(i = row, j = col; i >= 0 && j < n; i--, j++){
+		if(grid[i][j] == -2){
+			return false;
+		}
+	}for(i = row, j = col; i >= 0 && j >= 0; i--, j--){
+		if(grid[i][j] == -2){
+			return false;
 		}
 	}
-	return grid;
+	return true;
 }
+
 //need to 
-void placeC(int c, int grid[n][n], int n, int a, int points){
+int placeC(int c, int** grid, int n, int a, int points, int max){
+	if(points == 4 && c == 0){
+		print(grid, n);
+	}
 	if(c <= 0){
-		if(points > max){
-			max = points;
-		}
-		return;
+		return points;
 	}
 	for(int i = 0; i < n; i++){
 		for(int j = 0; j < n; j++){
-			if(grid[i][j] != -1 && grid[i][j] != -2){
+			bool safeP = safe(grid, i, j, n);
+			if(safeP){
 				int original = grid[i][j];
 				grid[i][j] = -2;
-				int** grid2 = updateGrid(grid, i, j, n);
-				placeC(c-1, grid2, n, a, points += original);
+				int points2 = points;
+				int maxTemp = placeC(c-1, grid, n, a, points2 += original, max);
+				if(maxTemp > max){
+					max = maxTemp;
+				}
 				grid[i][j] = original;
 			}
 		}
 	}
+	return max;
 }
 int dfs(int c, int** grid, int n, int a){
+	int max = 0;
 	for(int i = 0; i <= n-c; i++){
 		for(int j = 0; j < n; j++){
 			int original = grid[i][j];
 			grid[i][j] = -2; //-2 a camera is in that location
-			placeC(c-1, grid, n, a, original);
+			int points = placeC(c-1, grid, n, a, original, max);
+			if(points > max){
+				max = points;
+			}
 			grid[i][j] = original;
+			
 		}
 	}
 	return max;
@@ -104,11 +129,12 @@ int main(int argc, char* argv[]){
 		int j = line2 - '0';
 		grid[i][j]++;
 	}
+	int results;
 	if(algorithm == "dfs"){
-		int results = dfs(c, grid, n, a);
+		results = dfs(c, grid, n, a);
 	}else{
-		aStar(c, grid, n, a);
+		results = aStar(c, grid, n, a);
 	}
-	cout << results << endl;
+	cout << "the results are " << results;
 	return 0;
 }

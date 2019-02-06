@@ -66,50 +66,23 @@ bool safe(int** grid, int row, int col, int n){
 	}
 	return true;
 }
-/*int** safeGrid(int** grid, int row, int col, int n){
-	int i = 0; 
-	int j = 0;
-	for(i = 0; i < n; i++){
-		if(grid[row][i] != -2){
-			grid[row][i] = -1;
-		}else if(grid[i][col] != -2){
-			grid[i][col] = -1;
-		}
-	}for(i = row, j = col; i < n && j < n; i++, j++){
-		if(grid[i][j] != -2){
-			grid[i][j] = -1;
-		}
-	}for(i = row, j = col; i < n && j < n; i++, j--){
-		if(grid[i][j] != -2){
-			grid[i][j] = -1;
-		}
-	}for(i = row, j = col; i >= 0 && j < n; i--, j++){
-		if(grid[i][j] != -2){
-			grid[i][j] = -1;
-		}
-	}for(i = row, j = col; i >= 0 && j >= 0; i--, j--){
-		if(grid[i][j] != -2){
-			grid[i][j]
-		}
-	}
-	return true;
-}*/
-//need to 
+//work on optimization after finishing astar
 int placeC(int c, int** grid, int n, int a, int points, int max, int startR){
-	if(points == 3){
-		print(grid, n);
+	if(startR > n){
+		return 0;
 	}
 	if(c <= 0){
 		return points;
 	}
 	for(int i = startR; i < n; i++){
+		
 		for(int j = 0; j < n; j++){
 			bool safeP = safe(grid, i, j, n);
 			if(safeP){
 				int original = grid[i][j];
 				grid[i][j] = -2;
 				int points2 = points;
-				int maxTemp = placeC(c-1, grid, n, a, points2 += original, max, startR);
+				int maxTemp = placeC(c-1, grid, n, a, points2 += original, max, i+1);
 				if(maxTemp > max){
 					max = maxTemp;
 				}
@@ -125,7 +98,7 @@ int dfs(int c, int** grid, int n, int a){
 		for(int j = 0; j < n; j++){
 			int original = grid[i][j];
 			grid[i][j] = -2; //-2 a camera is in that location
-			int points = placeC(c-1, grid, n, a, original, max, i);
+			int points = placeC(c-1, grid, n, a, original, max, i+1);
 			if(points > max){
 				max = points;
 			}
@@ -174,15 +147,12 @@ int aStar(int c, int** grid, int n, int a){
 		//if it isn't a safe option, however it has a higher value, than 
 		//it there ar no longer any options than perhaps we start a new iteration
 		if(safeP){
-			cout << top.row << " " << top.col << endl;
 			c--;
 			grid[top.row][top.col] = -2;
 			explored.push_back(top);
 			score += gridV[top.row][top.col];
-			cout << score << endl;
 		}
 	}
-	print(grid, n);
 	return score;
 }
 
@@ -229,15 +199,13 @@ int main(int argc, char* argv[]){
 	int resultsA = 0;
 	if(algorithm == "dfs"){
 		results = dfs(c, grid, n, a);
-		resultsA = aStar(c, grid, n, a);
 	}else{
 		results = aStar(c, grid, n, a);
 	}
 	input.close();
 	ofstream outfile;
 	outfile.open("output.txt");
-	outfile << results << endl;;
-	outfile << resultsA << endl;
+	outfile << results;
 	outfile.close();
 	return 0;
 }

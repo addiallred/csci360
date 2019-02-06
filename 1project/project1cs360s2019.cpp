@@ -6,14 +6,14 @@
 #include <string>
 #include <sstream>
 using namespace std;
-
-struct tile
+//need to change to possibilities, have it have a vector of tiles that
+//it can see
+struct configerations
 {
-	int row;
-	int col;
+	vector<vector <int> > tile;
 	int f;
-	int g; 
-	int h;
+	int g; //number of points that are gained by placing a camera here 
+	int h; //number of conflicts at a location
 };
 
 class CompareTile {
@@ -66,6 +66,8 @@ bool safe(int** grid, int row, int col, int n){
 	}
 	return true;
 }
+//for placeC try to check the number of points that are left
+//and compar it to the number of available animals that are left
 //work on optimization after finishing astar
 int placeC(int c, int** grid, int n, int a, int points, int max, int startR){
 	if(startR > n){
@@ -75,7 +77,6 @@ int placeC(int c, int** grid, int n, int a, int points, int max, int startR){
 		return points;
 	}
 	for(int i = startR; i < n; i++){
-		
 		for(int j = 0; j < n; j++){
 			bool safeP = safe(grid, i, j, n);
 			if(safeP){
@@ -123,13 +124,18 @@ int aStar(int c, int** grid, int n, int a){
 		}
 		cout << endl;
 	}
-	priority_queue<tile, vector<tile>, CompareTile> queue;
+	//
+	priority_queue<configerations, vector<configerations>, CompareTile> queue;
 	for(int i = 0; i < n; i++){
 		for(int j = 0; j < n; j++){
 			int f = gridV[i][j] + 2;
 			//will come in here later once i have figured out a good heuristic
 			//for now i will leave it as it is
-			tile temp = { i, j, f, gridV[i][j], 0};
+			vector<int> colRow;
+			colRow.push_back(i);
+			colRow.push_back(j);
+			//need to go through and change
+			configerations temp = {colRow, f, gridV[i][j], 0};
 			queue.push(temp);
 		}
 	}

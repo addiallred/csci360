@@ -1,11 +1,33 @@
 #include <iostream>
+#include <vector>
+#include <queue>
+#include <iomanip>
 #include <fstream>
 #include <string>
 #include <sstream>
 using namespace std;
 
+struct tile
+{
+	int row;
+	int col;
+	int f;
+	int g; 
+	int h;
+};
 
-
+class CompareTile {
+public:
+    bool operator()(tile& t1, tile& t2)
+    {
+    	//max
+       if (t1.f > t2.f){
+       	return false;
+       }
+       //will probably want to change based on what the h and g value are
+       return true;
+   }
+};
 void print(int** grid, int n){
 	cout << "***********************" << endl;
 	for(int i = 0; i < n; i++){
@@ -44,20 +66,50 @@ bool safe(int** grid, int row, int col, int n){
 	}
 	return true;
 }
-
+/*int** safeGrid(int** grid, int row, int col, int n){
+	int i = 0; 
+	int j = 0;
+	for(i = 0; i < n; i++){
+		if(grid[row][i] != -2){
+			grid[row][i] = -1;
+		}else if(grid[i][col] != -2){
+			grid[i][col] = -1;
+		}
+	}for(i = row, j = col; i < n && j < n; i++, j++){
+		if(grid[i][j] != -2){
+			grid[i][j] = -1;
+		}
+	}for(i = row, j = col; i < n && j < n; i++, j--){
+		if(grid[i][j] != -2){
+			grid[i][j] = -1;
+		}
+	}for(i = row, j = col; i >= 0 && j < n; i--, j++){
+		if(grid[i][j] != -2){
+			grid[i][j] = -1;
+		}
+	}for(i = row, j = col; i >= 0 && j >= 0; i--, j--){
+		if(grid[i][j] != -2){
+			grid[i][j]
+		}
+	}
+	return true;
+}*/
 //need to 
-int placeC(int c, int** grid, int n, int a, int points, int max){
+int placeC(int c, int** grid, int n, int a, int points, int max, int startR){
+	if(points == 3){
+		print(grid, n);
+	}
 	if(c <= 0){
 		return points;
 	}
-	for(int i = 0; i < n; i++){
+	for(int i = startR; i < n; i++){
 		for(int j = 0; j < n; j++){
 			bool safeP = safe(grid, i, j, n);
 			if(safeP){
 				int original = grid[i][j];
 				grid[i][j] = -2;
 				int points2 = points;
-				int maxTemp = placeC(c-1, grid, n, a, points2 += original, max);
+				int maxTemp = placeC(c-1, grid, n, a, points2 += original, max, startR);
 				if(maxTemp > max){
 					max = maxTemp;
 				}
@@ -73,7 +125,7 @@ int dfs(int c, int** grid, int n, int a){
 		for(int j = 0; j < n; j++){
 			int original = grid[i][j];
 			grid[i][j] = -2; //-2 a camera is in that location
-			int points = placeC(c-1, grid, n, a, original, max);
+			int points = placeC(c-1, grid, n, a, original, max, i);
 			if(points > max){
 				max = points;
 			}
@@ -84,8 +136,54 @@ int dfs(int c, int** grid, int n, int a){
 	return max;
 }
 int aStar(int c, int** grid, int n, int a){
-	
-	return 0;
+	vector< vector<int> > gridV;
+	for(int i = 0; i < n; i++){
+		vector<int> temp;
+		for(int j = 0; j < n; j++){
+			temp.push_back(grid[i][j]);
+		}
+		gridV.push_back(temp);
+	}
+	for(int i = 0; i < n; i++){
+		for(int j = 0; j < n; j++){
+			cout << gridV[i][j];
+		}
+		cout << endl;
+	}
+	priority_queue<tile, vector<tile>, CompareTile> queue;
+	for(int i = 0; i < n; i++){
+		for(int j = 0; j < n; j++){
+			int f = gridV[i][j] + 2;
+			//will come in here later once i have figured out a good heuristic
+			//for now i will leave it as it is
+			tile temp = { i, j, f, gridV[i][j], 0};
+			queue.push(temp);
+		}
+	}
+	int score = 0;
+	//my problem is once i have popped all of them, it does not 
+	//have anything to back track to so first my heuristic could not be
+	//correct and or i do need to do some type of back tracking
+	//to make sure it is correct
+	while(c > 0){
+		vector<tile> explored;
+		tile top = queue.top();
+		queue.pop();
+		bool safeP = safe(grid, top.row, top.col, n);
+		//i am thinking probably will change something along this line
+		//if it isn't a safe option, however it has a higher value, than 
+		//it there ar no longer any options than perhaps we start a new iteration
+		if(safeP){
+			cout << top.row << " " << top.col << endl;
+			c--;
+			grid[top.row][top.col] = -2;
+			explored.push_back(top);
+			score += gridV[top.row][top.col];
+			cout << score << endl;
+		}
+	}
+	print(grid, n);
+	return score;
 }
 
 int main(int argc, char* argv[]){
@@ -113,6 +211,7 @@ int main(int argc, char* argv[]){
 		return 0;
 	}
 	int** grid = new int*[n];
+	
 	for(int i = 0; i < n; ++i){
     	grid[i] = new int[n];
     	for(int j = 0; j < n; j++){
@@ -127,15 +226,18 @@ int main(int argc, char* argv[]){
 		grid[i][j]++;
 	}
 	int results;
+	int resultsA = 0;
 	if(algorithm == "dfs"){
 		results = dfs(c, grid, n, a);
+		resultsA = aStar(c, grid, n, a);
 	}else{
 		results = aStar(c, grid, n, a);
 	}
 	input.close();
 	ofstream outfile;
 	outfile.open("output.txt");
-	outfile << results;
+	outfile << results << endl;;
+	outfile << resultsA << endl;
 	outfile.close();
 	return 0;
 }

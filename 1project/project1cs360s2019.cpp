@@ -11,7 +11,7 @@ using namespace std;
 struct tile{
 	int row;
 	int col;
-	int conflicts;
+	int openPoint;
 	int points;
 };
 struct configerations
@@ -19,7 +19,7 @@ struct configerations
 	vector<tile> tiles;
 	int f;
 	int g; //number of points that are gained by placing a camera here 
-	int h; //number of conflicts at a location
+	int h; //number of points for gain
 	vector<vector<int> > grid;
 };
 
@@ -39,7 +39,7 @@ public:
        	return false;
        }else if(t1.g < t2.g){
        	return true;
-       }else if(t1.h < t2.h){
+       }else if(t1.h > t2.h){
        	return false;
        }
        return true;
@@ -56,6 +56,7 @@ void print(int** grid, int n){
 }
 void printV(vector<vector<int> > grid, int n){
 	cout << "********************88" << endl;
+	cout << grid[0][0] << endl;
 	for(int i = 0; i < n; i++){
 		for(int j = 0; j < n; j++){
 			cout << grid[i][j];
@@ -164,6 +165,22 @@ int conflicts(vector<vector<int> > grid, int n, int row, int col){
 	}
 	return numCons;
 }
+vector<int> heurisCalc(vector<vector<int > > grid, int n){
+	int openSpace = 0;
+	int pointsG = 0;
+	for(int i = 0; i < n; i++){
+		for(int j = 0; j < n; j++){
+			if(grid[i][j] >= 0){
+				openSpace++;
+				pointsG += grid[i][j];
+			}
+		}
+	}
+	vector<int> results;
+	results.push_back(openSpace);
+	results.push_back(pointsG);
+	return results;
+}
 vector<vector<int> > safe(vector<vector<int > > grid, int row, int col, int n){
 	int i = 0; 
 	int j = 0;
@@ -203,20 +220,23 @@ int aStar(int c, int** grid, int n, int a){
 		gridV.push_back(temp);
 	}
 	printV(gridV, n);
-	int count = 0;
 	for(int i = 0; i < n; i++){
 		for(int j = 0; j < n; j++){
-			count++;
-			int confl = 0;
-			confl = conflicts(gridV, n, i, j);
-			tile temp = {i, j, confl, gridV[i][j]};
-			vector<tile> tileV;
-			tileV.push_back(temp);
 			vector<vector<int> > gridUp = safe(gridV, i, j, n);
 			gridUp[i][j] = -2;
-			int f = temp.points - temp.conflicts;
-			configerations tempResult = {tileV, f, temp.points, temp.conflicts, gridUp};
-			queue.push(tempResult);
+			int camera = c-1;
+			vector<int> results = heurisCalc(gridUp, n);
+			int openSpaces = results[0];
+			int points = results[1];
+			if(openSpaces >= camera){
+				tile temp = {i, j, points, gridV[i][j]};
+				vector<tile> tileV;
+				tileV.push_back(temp);
+				int f = temp.points + points;
+				configerations tempResult = {tileV, f, temp.points, points, gridUp};
+				queue.push(tempResult);
+			}
+			
 		}
 	}
 	int score = 0;
@@ -226,10 +246,9 @@ int aStar(int c, int** grid, int n, int a){
 	//have a configuration in there but could do this when working on optimizing
 	while(!allCP){
 		configerations top = queue.top();
-		printV(top.grid, n);
 		queue.pop();
+		cout << top.f << endl;
 		if(top.tiles.size() == c){
-			printV(top.grid, n);
 			score = top.g;
 			allCP = true;
 		}
@@ -241,15 +260,21 @@ int aStar(int c, int** grid, int n, int a){
 					int newP = top.g + gridTiles[i][j];
 					//could maybe optimize this by just having a vector that stores the number of confilcts 
 					//per vectors
-					int testC = conflicts(gridTiles, n, i, j);
-					int newC = top.h + testC;
-					int newF = newP - newC; 
-					tile temp = {i, j, testC, gridTiles[i][j]};
-					currentTile.push_back(temp);
 					vector<vector<int> > gridUp = safe(gridTiles, i, j, n);
 					gridUp[i][j] = -2;
-					configerations newCon = {currentTile, newF, newP, newC, gridUp};
-					queue.push(newCon);
+					cout << "trying this" << endl;
+					vector<int> results = heurisCalc(gridUp, n);
+					int openSpace = results[0];
+					cout << openSpace << endl;
+					int pointsAvailable = results[1];
+					cout << pointsAvailable << endl;
+					if(openSpace >= c - currentTile.size()){
+						int newF = newP + pointsAvailable; 
+						tile temp = {i, j, pointsAvailable, gridTiles[i][j]};
+						currentTile.push_back(temp);
+						configerations newCon = {currentTile, newF, newP, pointsAvailable, gridUp};
+						queue.push(newCon);
+					}
 				}
 			}
 		}
@@ -296,9 +321,11 @@ int main(int argc, char* argv[]){
 		int j = line2 - '0';
 		grid[i][j]++;
 	}
-	int results;
+	int results = 0;
+	int resultsA = 0;
 	if(algorithm == "dfs"){
 		results = dfs(c, grid, n, a);
+		resultsA = aStar(c, grid, n, a);
 	}else{
 		results = aStar(c, grid, n, a);
 	}
@@ -306,6 +333,7 @@ int main(int argc, char* argv[]){
 	ofstream outfile;
 	outfile.open("output.txt");
 	outfile << results;
+	outfile << " " << resultsA;
 	outfile.close();
 	return 0;
 }
